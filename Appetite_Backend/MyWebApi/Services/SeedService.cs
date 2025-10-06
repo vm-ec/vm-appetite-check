@@ -17,7 +17,7 @@ public class SeedService
 
     public async Task SeedInitialDataAsync()
     {
-        // Check if users already exist
+        // Check if data already exists
         if (await _context.Users.AnyAsync())
             return;
 
@@ -68,6 +68,49 @@ public class SeedService
         };
 
         _context.Users.AddRange(users);
+        
+        // Seed initial products
+        var products = new[]
+        {
+            new DbProduct
+            {
+                Id = "prod-001",
+                Name = "General Liability - SME",
+                Carrier = "Acme Insurance",
+                PerOccurrence = 1000000,
+                Aggregate = 2000000,
+                MinAnnualRevenue = 0,
+                MaxAnnualRevenue = 5000000,
+                NaicsAllowed = "445310,722511",
+                CreatedAt = DateTime.UtcNow.AddDays(-30)
+            },
+            new DbProduct
+            {
+                Id = "prod-002",
+                Name = "Property - Retail",
+                Carrier = "Acme Insurance",
+                PerOccurrence = 500000,
+                Aggregate = 1000000,
+                MinAnnualRevenue = 0,
+                MaxAnnualRevenue = 2000000,
+                NaicsAllowed = "445110,445120",
+                CreatedAt = DateTime.UtcNow.AddDays(-20)
+            },
+            new DbProduct
+            {
+                Id = "prod-003",
+                Name = "Workers Comp - SME",
+                Carrier = "Beta Mutual",
+                PerOccurrence = 1000000,
+                Aggregate = 1000000,
+                MinAnnualRevenue = 0,
+                MaxAnnualRevenue = 3000000,
+                NaicsAllowed = "722511,561720",
+                CreatedAt = DateTime.UtcNow.AddDays(-15)
+            }
+        };
+        
+        _context.Products.AddRange(products);
         await _context.SaveChangesAsync();
     }
 }

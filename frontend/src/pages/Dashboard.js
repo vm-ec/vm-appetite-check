@@ -17,6 +17,11 @@ import CarrierList from '../components/CarrierList';
 import CarrierForm from '../components/CarrierForm';
 import ProductList from '../components/ProductList';
 import ProductForm from '../components/ProductForm';
+import RuleLibrary from '../components/RuleLibrary';
+import RuleConfiguration from '../components/RuleConfiguration';
+import UploadRules from '../components/UploadRules';
+import AddRule from '../components/AddRule';
+import Analytics from '../components/Analytics';
 
 const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -24,6 +29,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCarrierForm, setShowCarrierForm] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [showAddRule, setShowAddRule] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -134,7 +140,7 @@ const Dashboard = () => {
             transition={{ duration: 0.3 }}
           >
             {activeSection === 'dashboard' ? (
-              <DashboardContent />
+              <DashboardContent onNavigate={setActiveSection} />
             ) : activeSection === 'carriers' ? (
               showCarrierForm ? (
                 <CarrierForm 
@@ -159,6 +165,37 @@ const Dashboard = () => {
               ) : (
                 <ProductList onCreateProduct={() => setShowProductForm(true)} />
               )
+            ) : activeSection === 'rule-library' ? (
+              <RuleLibrary />
+            ) : activeSection === 'add-rule' ? (
+              showAddRule ? (
+                <AddRule 
+                  onBack={() => setShowAddRule(false)}
+                  onSuccess={() => {
+                    setShowAddRule(false);
+                    alert('Rule created successfully!');
+                  }}
+                />
+              ) : (
+                <div className="p-6">
+                  <div className="max-w-2xl mx-auto text-center">
+                    <h2 className="text-2xl font-bold mb-4">Add New Rule</h2>
+                    <p className="text-gray-600 mb-6">Create business rules to define insurance eligibility criteria</p>
+                    <button
+                      onClick={() => setShowAddRule(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Create New Rule
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : activeSection === 'rule-configuration' ? (
+              <RuleConfiguration />
+            ) : activeSection === 'upload-rules' ? (
+              <UploadRules />
+            ) : activeSection === 'analytics' ? (
+              <Analytics />
             ) : (
               <SectionContent section={activeSection} currentUser={currentUser} />
             )}

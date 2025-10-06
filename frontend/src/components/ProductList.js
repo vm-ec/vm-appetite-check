@@ -66,19 +66,22 @@ const ProductList = ({ onCreateProduct }) => {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-semibold text-lg">{product.name}</h3>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-gray-600">{product.description || 'No description available'}</p>
                 <div className="flex gap-2 mt-2">
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {product.productType}
+                    {product.productType || 'N/A'}
                   </span>
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                     {product.carrier}
                   </span>
                 </div>
+                <div className="mt-2 text-sm text-gray-500">
+                  <span>NAICS: {product.naicsAllowed || 'Not specified'}</span>
+                </div>
               </div>
               <div className="text-right">
-                <span className={`px-2 py-1 rounded-full text-xs ${product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {product.isActive ? 'Active' : 'Inactive'}
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                  {product.id}
                 </span>
               </div>
             </div>

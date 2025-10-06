@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Appietet_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj": {}
+    "C:\\VS Code\\Ankita\\06-oct\\Appetite_Checker_Demo\\Appetite_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj": {}
   },
   "projects": {
-    "C:\\Appietet_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj": {
+    "C:\\VS Code\\Ankita\\06-oct\\Appetite_Checker_Demo\\Appetite_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Appietet_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj",
+        "projectUniqueName": "C:\\VS Code\\Ankita\\06-oct\\Appetite_Checker_Demo\\Appetite_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj",
         "projectName": "MyWebApi",
-        "projectPath": "C:\\Appietet_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj",
-        "packagesPath": "C:\\Users\\SakethRamRagi\\.nuget\\packages\\",
-        "outputPath": "C:\\Appietet_checker\\Appetite_Backend\\MyWebApi\\obj\\",
+        "projectPath": "C:\\VS Code\\Ankita\\06-oct\\Appetite_Checker_Demo\\Appetite_checker\\Appetite_Backend\\MyWebApi\\MyWebApi.csproj",
+        "packagesPath": "C:\\Users\\VeenaKolloju\\.nuget\\packages\\",
+        "outputPath": "C:\\VS Code\\Ankita\\06-oct\\Appetite_Checker_Demo\\Appetite_checker\\Appetite_Backend\\MyWebApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\SakethRamRagi\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\VeenaKolloju\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"

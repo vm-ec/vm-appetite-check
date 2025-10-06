@@ -143,6 +143,7 @@ public class CanvasController : ControllerBase
     /// Fetch rule details by id
     /// </summary>
     [HttpGet("rule/{id}")]
+    [Authorize]
     public async Task<ActionResult<RuleDetails>> GetRule(string id)
     {
         try
@@ -160,6 +161,7 @@ public class CanvasController : ControllerBase
     /// List rules with pagination
     /// </summary>
     [HttpGet("rules")]
+    [Authorize]
     public async Task<ActionResult<RulesResponse>> GetRules(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
@@ -173,6 +175,7 @@ public class CanvasController : ControllerBase
     /// Create a new rule
     /// </summary>
     [HttpPost("rules")]
+    [Authorize(Roles = "admin,carrier")]
     public async Task<ActionResult<RuleDetails>> CreateRule([FromBody] RuleDetails rule)
     {
         var result = await _canvasService.CreateRuleAsync(rule);
@@ -183,6 +186,7 @@ public class CanvasController : ControllerBase
     /// Update an existing rule
     /// </summary>
     [HttpPut("rule/{id}")]
+    [Authorize(Roles = "admin,carrier")]
     public async Task<ActionResult<RuleDetails>> UpdateRule(string id, [FromBody] RuleDetails rule)
     {
         try
@@ -197,10 +201,29 @@ public class CanvasController : ControllerBase
     }
 
     /// <summary>
+    /// Delete a rule (admin only)
+    /// </summary>
+    [HttpDelete("rule/{id}")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> DeleteRule(string id)
+    {
+        try
+        {
+            await _canvasService.DeleteRuleAsync(id);
+            return Ok(new { message = "Rule deleted successfully" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound($"Rule {id} not found");
+        }
+    }
+
+    /// <summary>
     /// Bulk rule upload (CSV/Excel) with validation
     /// </summary>
     [HttpPost("rules/upload")]
     [Consumes("multipart/form-data")]
+    [Authorize(Roles = "admin,carrier")]
     public async Task<ActionResult<RuleUploadResponse>> UploadRules(IFormFile rulesFile, bool overwrite = false)
     {
         var result = await _canvasService.UploadRulesAsync(rulesFile, overwrite);
@@ -264,9 +287,28 @@ public class CanvasController : ControllerBase
     }
 
     /// <summary>
+    /// Delete a carrier (admin only)
+    /// </summary>
+    [HttpDelete("carrier-details/{id}")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> DeleteCarrierDetails(string id)
+    {
+        try
+        {
+            await _canvasService.DeleteCarrierDetailsAsync(id);
+            return Ok(new { message = "Carrier deleted successfully" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound($"Carrier {id} not found");
+        }
+    }
+
+    /// <summary>
     /// Provides latest aggregated analytics snapshot for dashboards and Power BI embedding
     /// </summary>
     [HttpGet("analytics")]
+    [Authorize]
     public async Task<ActionResult<CanvasAnalyticsResponse>> GetAnalytics(
         [FromQuery] DateTime? since = null)
     {

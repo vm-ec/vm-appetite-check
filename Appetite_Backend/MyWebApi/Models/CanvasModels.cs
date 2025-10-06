@@ -17,7 +17,7 @@ public record UsersResponse(UserSummary[] Data, PaginationInfo Pagination);
 public record UserSummary(string Id, string Name, string Email, string[] Roles, bool IsActive);
 
 // Product models
-public record ProductDetails(string Id, string Name, string Carrier, ProductLimits Limits, ProductEligibility Eligibility, string[] NaicsAllowed, DateTime CreatedAt);
+public record ProductDetails(string Id, string Name, string? Description, string? ProductType, string Carrier, int PerOccurrence, int Aggregate, int MinAnnualRevenue, int MaxAnnualRevenue, string NaicsAllowed, DateTime CreatedAt);
 public record ProductLimits(int PerOccurrence, int Aggregate);
 public record ProductEligibility(int MinAnnualRevenue, int MaxAnnualRevenue);
 public record ProductsResponse(ProductSummary[] Data, PaginationInfo Pagination);
@@ -34,7 +34,8 @@ public record UploadError(int Row, string Error);
 
 // Canvas analytics models
 public record CanvasAnalyticsResponse(DateTime SnapshotAt, CanvasMetrics Metrics, string PowerBIEmbedUrl);
-public record CanvasMetrics(int TotalRules, Dictionary<string, int> RulesByPriority, Dictionary<string, int> ProductsByCarrier, int RecentUploads);
+public record CanvasMetrics(int TotalRules, Dictionary<string, int> RulesByPriority, Dictionary<string, int> ProductsByCarrier, int RecentUploads, int TotalUsers, int TotalCarriers, int TotalProducts, Dictionary<string, int> UsersByRole, RealGrowthData[] GrowthData);
+public record RealGrowthData(string Date, int Users, int Rules, int Carriers);
 
 // Carrier models
 public record CarrierDetails(string CarrierId, string LegalName, string DisplayName, string? Country, string? HeadquartersAddress, string? PrimaryContactName, string? PrimaryContactEmail, string? PrimaryContactPhone, string? TechnicalContactName, string? TechnicalContactEmail, string? AuthMethod, string? SsoMetadataUrl, string? ApiClientId, string? ApiSecretKeyRef, string? DataResidency, string[]? ProductsOffered, bool RuleUploadAllowed, string? RuleUploadMethod, bool RuleApprovalRequired, bool DefaultRuleVersioning, bool UseNaicsEnrichment, string? PreferredNaicsSource, string? PasWebhookUrl, string? WebhookAuthType, string? WebhookSecretRef, string? ContractRef, string? BillingContactEmail, int? RetentionPolicyDays, string? CreatedBy, DateTime CreatedAt, DateTime? UpdatedAt, string? AdditionalJson);
@@ -50,4 +51,4 @@ public record CreateUserResponse(string UserId, string Email, string TemporaryPa
 
 // Internal storage models
 public record StoredUser(string Id, string Name, string Email, string[] Roles, string OrganizationId, string OrganizationName, DateTime CreatedAt, bool IsActive, DateTime? LastLoginAt, string? AuthProvider);
-public record StoredProduct(string Id, string Name, string Carrier, ProductLimits Limits, ProductEligibility Eligibility, string[] NaicsAllowed, DateTime CreatedAt);
+public record StoredProduct(string Id, string Name, string? Description, string? ProductType, string Carrier, int PerOccurrence, int Aggregate, int MinAnnualRevenue, int MaxAnnualRevenue, string NaicsAllowed, DateTime CreatedAt);

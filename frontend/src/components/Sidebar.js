@@ -40,7 +40,6 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
         disabled: userRole === 'carrier',
         disabledMessage: 'You are already an onboarded carrier. Use My Profile to view your details.'
       },
-      { id: 'product-onboarding', label: 'Product Onboarding', icon: Package, color: 'from-warning-500 to-warning-600' },
       { id: 'product-library', label: 'Product Library', icon: Package, color: 'from-purple-500 to-purple-600' },
       { id: 'rule-library', label: 'Rule Library', icon: BookOpen, color: 'from-accent-500 to-accent-600' },
       { id: 'add-rule', label: 'Add Rule', icon: Plus, color: 'from-danger-500 to-danger-600' },

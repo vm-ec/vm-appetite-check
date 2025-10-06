@@ -9,6 +9,7 @@ public interface IIdGenerationService
     Task<string> GenerateCarrierIdAsync();
     Task<string> GenerateOrganizationIdAsync();
     Task<string> GenerateProductIdAsync();
+    Task<string> GenerateRuleIdAsync();
 }
 
 public class IdGenerationService : IIdGenerationService
@@ -40,13 +41,13 @@ public class IdGenerationService : IIdGenerationService
 
     public async Task<string> GenerateProductIdAsync()
     {
-        // Since products are in-memory, we need to count them differently
-        // This is a temporary solution until products are moved to database
-        var existingProductsCount = 3; // Current hardcoded products (prod-001, prod-002, prod-003)
-        
-        // In a real implementation, this would count from Products table
-        // var count = await _context.Products.CountAsync();
-        
-        return $"prod-{(existingProductsCount + 1):D3}";
+        var count = await _context.Products.CountAsync();
+        return $"prod-{(count + 1):D3}";
+    }
+
+    public async Task<string> GenerateRuleIdAsync()
+    {
+        var count = await _context.Rules.CountAsync();
+        return $"rul-{(count + 1):D3}";
     }
 }

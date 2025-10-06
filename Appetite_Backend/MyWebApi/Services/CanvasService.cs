@@ -18,11 +18,13 @@ public interface ICanvasService
     Task<RulesResponse> GetRulesAsync(int page, int pageSize, string? sortBy);
     Task<RuleDetails> CreateRuleAsync(RuleDetails rule);
     Task<RuleDetails> UpdateRuleAsync(string id, RuleDetails rule);
+    Task DeleteRuleAsync(string id);
     Task<RuleUploadResponse> UploadRulesAsync(IFormFile file, bool overwrite);
     Task<CarrierDetails> GetCarrierDetailsAsync(string id);
     Task<CarriersResponse> GetCarriersListAsync(int page, int pageSize);
     Task<CarrierDetails> CreateCarrierDetailsAsync(CarrierDetails carrier);
     Task<CarrierDetails> UpdateCarrierDetailsAsync(string id, CarrierDetails carrier);
+    Task DeleteCarrierDetailsAsync(string id);
     Task<CanvasAnalyticsResponse> GetAnalyticsAsync(DateTime? since);
     Task<CreateUserResponse> CreateUserAsync(CreateUserRequest request);
 }
@@ -50,12 +52,7 @@ public class CanvasService : ICanvasService
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    private static readonly List<StoredProduct> _products = new()
-    {
-        new("prod-001", "General Liability - SME", "Acme Insurance", new ProductLimits(1000000, 2000000), new ProductEligibility(0, 5000000), new[] { "445310", "722511" }, DateTime.Parse("2024-10-10T09:00:00Z")),
-        new("prod-002", "Property - Retail", "Acme Insurance", new ProductLimits(500000, 1000000), new ProductEligibility(0, 2000000), new[] { "445110", "445120" }, DateTime.UtcNow.AddDays(-20)),
-        new("prod-003", "Workers Comp - SME", "Beta Mutual", new ProductLimits(1000000, 1000000), new ProductEligibility(0, 3000000), new[] { "722511", "561720" }, DateTime.UtcNow.AddDays(-15))
-    };
+
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
@@ -213,41 +210,52 @@ public class CanvasService : ICanvasService
 
     public async Task<ProductDetails> GetProductAsync(string id)
     {
-        var product = _products.FirstOrDefault(p => p.Id == id);
+        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
         if (product == null)
             throw new KeyNotFoundException($"Product {id} not found");
         
-        var details = new ProductDetails(product.Id, product.Name, product.Carrier, product.Limits, product.Eligibility, product.NaicsAllowed, product.CreatedAt);
-        return await Task.FromResult(details);
+        return new ProductDetails(product.Id, product.Name, "", "", product.Carrier, product.PerOccurrence, product.Aggregate, product.MinAnnualRevenue, product.MaxAnnualRevenue, product.NaicsAllowed, product.CreatedAt);
     }
 
     public async Task<ProductsResponse> GetProductsAsync(string? carrier, int page, int pageSize)
     {
-        var filteredProducts = _products.AsQueryable();
+        var query = _context.Products.AsQueryable();
         if (!string.IsNullOrEmpty(carrier))
-            filteredProducts = filteredProducts.Where(p => p.Carrier == carrier);
+            query = query.Where(p => p.Carrier == carrier);
 
-        var totalItems = filteredProducts.Count();
+        var totalItems = await query.CountAsync();
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
-        var products = filteredProducts
+        var products = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new ProductSummary(p.Id, p.Name, p.Carrier))
-            .ToArray();
+            .ToArrayAsync();
 
         var pagination = new PaginationInfo(page, pageSize, totalPages, totalItems);
-        return await Task.FromResult(new ProductsResponse(products, pagination));
+        return new ProductsResponse(products, pagination);
     }
 
     public async Task<ProductDetails> CreateProductAsync(ProductDetails product)
     {
         var newId = await _idGenerationService.GenerateProductIdAsync();
-        var storedProduct = new StoredProduct(newId, product.Name, product.Carrier, product.Limits, product.Eligibility, product.NaicsAllowed, DateTime.UtcNow);
-        _products.Add(storedProduct);
+        var dbProduct = new DbProduct
+        {
+            Id = newId,
+            Name = product.Name,
+            Carrier = product.Carrier,
+            PerOccurrence = product.PerOccurrence,
+            Aggregate = product.Aggregate,
+            MinAnnualRevenue = product.MinAnnualRevenue,
+            MaxAnnualRevenue = product.MaxAnnualRevenue,
+            NaicsAllowed = product.NaicsAllowed,
+            CreatedAt = DateTime.UtcNow
+        };
         
-        var createdProduct = new ProductDetails(storedProduct.Id, storedProduct.Name, storedProduct.Carrier, storedProduct.Limits, storedProduct.Eligibility, storedProduct.NaicsAllowed, storedProduct.CreatedAt);
-        return await Task.FromResult(createdProduct);
+        _context.Products.Add(dbProduct);
+        await _context.SaveChangesAsync();
+        
+        return new ProductDetails(dbProduct.Id, dbProduct.Name, product.Description, product.ProductType, dbProduct.Carrier, dbProduct.PerOccurrence, dbProduct.Aggregate, dbProduct.MinAnnualRevenue, dbProduct.MaxAnnualRevenue, dbProduct.NaicsAllowed, dbProduct.CreatedAt);
     }
 
     public async Task<RuleDetails> GetRuleAsync(string id)
@@ -290,7 +298,7 @@ public class CanvasService : ICanvasService
 
     public async Task<RuleDetails> CreateRuleAsync(RuleDetails rule)
     {
-        var newId = $"rul-{DateTime.UtcNow.Ticks}";
+        var newId = await _idGenerationService.GenerateRuleIdAsync();
         var dbRule = new DbRule
         {
             RuleId = newId,
@@ -346,24 +354,76 @@ public class CanvasService : ICanvasService
 
     public async Task<CanvasAnalyticsResponse> GetAnalyticsAsync(DateTime? since)
     {
+        var sinceDate = since ?? DateTime.UtcNow.AddDays(-30);
+        
+        // Real database metrics
+        var totalUsers = await _context.Users.CountAsync();
+        var totalCarriers = await _context.Carriers.CountAsync();
         var totalRules = await _context.Rules.CountAsync();
+        var totalProducts = await _context.Products.CountAsync();
+        
+        // Rules by priority (real data)
         var rulesByPriority = await _context.Rules
-            .GroupBy(r => r.Priority ?? "unknown")
-            .ToDictionaryAsync(g => g.Key, g => g.Count());
-        var productsByCarrier = await _context.Products
-            .GroupBy(p => p.Carrier)
+            .GroupBy(r => r.Priority ?? "medium")
             .ToDictionaryAsync(g => g.Key, g => g.Count());
         
-        var metrics = new CanvasMetrics(
-            TotalRules: totalRules,
-            RulesByPriority: rulesByPriority,
-            ProductsByCarrier: productsByCarrier,
-            RecentUploads: 3
-        );
+        // Ensure we have data even if no rules exist
+        if (!rulesByPriority.Any())
+        {
+            rulesByPriority = new Dictionary<string, int> { { "No Rules", 0 } };
+        }
+        
+        // Users by role (real data)
+        var usersByRole = await _context.Users
+            .GroupBy(u => u.Roles ?? "user")
+            .ToDictionaryAsync(g => g.Key, g => g.Count());
+        
+        // Recent activity (real data)
+        var recentRules = await _context.Rules
+            .Where(r => r.CreatedAt >= sinceDate)
+            .CountAsync();
+        
+        // Real growth data (last 7 days)
+        var growthData = new List<RealGrowthData>();
+        for (int i = 6; i >= 0; i--)
+        {
+            var date = DateTime.UtcNow.AddDays(-i);
+            var dayStart = date.Date;
+            var dayEnd = dayStart.AddDays(1);
+            
+            var dailyUsers = await _context.Users
+                .Where(u => u.CreatedAt >= dayStart && u.CreatedAt < dayEnd)
+                .CountAsync();
+            
+            var dailyRules = await _context.Rules
+                .Where(r => r.CreatedAt >= dayStart && r.CreatedAt < dayEnd)
+                .CountAsync();
+            
+            var dailyCarriers = await _context.Carriers
+                .Where(c => c.CreatedAt >= dayStart && c.CreatedAt < dayEnd)
+                .CountAsync();
+            
+            growthData.Add(new RealGrowthData(
+                date.ToString("yyyy-MM-dd"),
+                dailyUsers,
+                dailyRules,
+                dailyCarriers
+            ));
+        }
         
         var response = new CanvasAnalyticsResponse(
             DateTime.UtcNow,
-            metrics,
+            new CanvasMetrics(
+                TotalRules: totalRules,
+                RulesByPriority: rulesByPriority,
+                ProductsByCarrier: new Dictionary<string, int> { { "Products", totalProducts } },
+                RecentUploads: recentRules,
+                TotalUsers: totalUsers,
+                TotalCarriers: totalCarriers,
+                TotalProducts: totalProducts,
+                UsersByRole: usersByRole,
+                GrowthData: growthData.ToArray()
+            ),
             "https://app.powerbi.com/reportEmbed?reportId=abcd-1234"
         );
         
@@ -574,5 +634,24 @@ public class CanvasService : ICanvasService
             existingRule.Conditions?.Split(';'), existingRule.ContactEmail, existingRule.CreatedBy, existingRule.CreatedAt, existingRule.UpdatedAt, existingRule.AdditionalJson);
     }
 
+    public async Task DeleteRuleAsync(string id)
+    {
+        var existingRule = await _context.Rules.FirstOrDefaultAsync(r => r.RuleId == id);
+        if (existingRule == null)
+            throw new KeyNotFoundException($"Rule {id} not found");
+        
+        _context.Rules.Remove(existingRule);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteCarrierDetailsAsync(string id)
+    {
+        var existingCarrier = await _context.Carriers.FirstOrDefaultAsync(c => c.CarrierId == id);
+        if (existingCarrier == null)
+            throw new KeyNotFoundException($"Carrier {id} not found");
+        
+        _context.Carriers.Remove(existingCarrier);
+        await _context.SaveChangesAsync();
+    }
 
 }
