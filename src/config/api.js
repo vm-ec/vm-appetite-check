@@ -6,7 +6,9 @@ const API_CONFIG = {
     CARRIERS: '/canvas/carriers',
     CARRIER: '/canvas/carrier',
     PRODUCTS: '/canvas/products',
-    PRODUCT: '/canvas/product'
+    PRODUCT: '/canvas/product',
+    RULES: '/canvas/rules',
+    RULE: '/canvas/rule'
   }
 };
 

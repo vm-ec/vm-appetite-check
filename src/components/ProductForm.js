@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, ArrowLeft } from 'lucide-react';
 import { productService } from '../services/productService';
@@ -7,10 +7,24 @@ const ProductForm = ({ onBack, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    productType: 'Auto',
-    carrier: '',
-    isActive: true
+    productType: '',
+    naicsAllowed: '',
+    carrier: ''
   });
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      const userData = JSON.parse(user);
+      setCurrentUser(userData);
+      // Auto-populate carrier name from user's organization or name
+      setFormData(prev => ({
+        ...prev,
+        carrier: userData.name || 'Default Carrier'
+      }));
+    }
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,16 +40,11 @@ const ProductForm = ({ onBack, onSuccess }) => {
         description: formData.description,
         productType: formData.productType,
         carrier: formData.carrier,
-        isActive: formData.isActive,
-        coverage: {
-          limits: {},
-          deductibles: {}
-        },
-        eligibility: {
-          minAge: 18,
-          maxAge: 75,
-          states: []
-        },
+        naicsAllowed: formData.naicsAllowed,
+        perOccurrence: 1000000,
+        aggregate: 2000000,
+        minAnnualRevenue: 0,
+        maxAnnualRevenue: 5000000,
         createdAt: new Date().toISOString()
       };
 
@@ -80,6 +89,22 @@ const ProductForm = ({ onBack, onSuccess }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Carrier Name *
+            </label>
+            <input
+              type="text"
+              name="carrier"
+              value={formData.carrier}
+              onChange={handleChange}
+              required
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+              placeholder="Auto-populated from user"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Product Name *
             </label>
             <input
@@ -95,12 +120,13 @@ const ProductForm = ({ onBack, onSuccess }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
+              Product Description *
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
+              required
               rows="3"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Enter product description"
@@ -111,46 +137,30 @@ const ProductForm = ({ onBack, onSuccess }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Product Type *
             </label>
-            <select
+            <input
+              type="text"
               name="productType"
               value={formData.productType}
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="Auto">Auto Insurance</option>
-              <option value="Home">Home Insurance</option>
-              <option value="Life">Life Insurance</option>
-              <option value="Commercial">Commercial Insurance</option>
-            </select>
+              placeholder="Enter product type (e.g., Auto, Home, Life)"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Carrier *
+              NAICS Allowed *
             </label>
             <input
               type="text"
-              name="carrier"
-              value={formData.carrier}
+              name="naicsAllowed"
+              value={formData.naicsAllowed}
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Enter carrier name"
+              placeholder="Enter NAICS codes (comma separated, e.g., 445310, 722511)"
             />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium text-gray-700">
-              Active Product
-            </label>
           </div>
 
           <div className="flex gap-4">

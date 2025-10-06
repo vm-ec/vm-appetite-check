@@ -62,16 +62,6 @@ const LoginForm = ({ onBack, onLogin }) => {
           </motion.div>
           <h2 className="text-3xl font-bold gradient-text mb-2">Welcome Back</h2>
           <p className="text-gray-600">Sign in to your carrier account</p>
-          
-          {/* Demo Credentials Info */}
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-left">
-            <p className="font-semibold text-blue-800 mb-2">Test Credentials:</p>
-            <div className="space-y-1 text-blue-700">
-              <p>• admin@appetitechecker.com / Admin123!</p>
-              <p>• carrier@example.com / Admin123!</p>
-              <p>• agent@example.com / Admin123!</p>
-            </div>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

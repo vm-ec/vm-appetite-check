@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -8,24 +8,128 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Package
 } from 'lucide-react';
+import { analyticsService } from '../services/analyticsService';
 
-const DashboardContent = () => {
-  const stats = [
-    { title: 'Active Rules', value: '247', icon: Shield, color: 'from-primary-500 to-primary-600', change: '+12%' },
-    { title: 'Total Carriers', value: '89', icon: Users, color: 'from-success-500 to-success-600', change: '+8%' },
-    { title: 'Documents', value: '1,234', icon: FileText, color: 'from-warning-500 to-warning-600', change: '+23%' },
-    { title: 'Analytics Reports', value: '56', icon: TrendingUp, color: 'from-accent-500 to-accent-600', change: '+15%' },
-  ];
+const DashboardContent = ({ onNavigate }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const recentActivities = [
-    { action: 'New carrier onboarded: ABC Insurance', time: '2 hours ago', type: 'success', icon: CheckCircle },
-    { action: 'Rule configuration updated', time: '4 hours ago', type: 'info', icon: Activity },
-    { action: 'Product onboarding completed', time: '6 hours ago', type: 'success', icon: CheckCircle },
-    { action: 'System maintenance scheduled', time: '1 day ago', type: 'warning', icon: AlertTriangle },
-    { action: 'Analytics report generated', time: '2 days ago', type: 'info', icon: Activity },
-  ];
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const result = await analyticsService.getAnalytics();
+      const processedData = analyticsService.processAnalyticsData(result);
+      setDashboardData(processedData);
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStats = () => {
+    if (!dashboardData) return [];
+    
+    return [
+      { 
+        title: 'Active Rules', 
+        value: dashboardData.totalRules.toString(), 
+        icon: Shield, 
+        color: 'from-primary-500 to-primary-600', 
+        change: dashboardData.totalRules > 0 ? 'Active' : 'No Rules'
+      },
+      { 
+        title: 'Total Carriers', 
+        value: dashboardData.totalCarriers.toString(), 
+        icon: Users, 
+        color: 'from-success-500 to-success-600', 
+        change: dashboardData.totalCarriers > 0 ? 'Active' : 'No Data'
+      },
+      { 
+        title: 'Total Users', 
+        value: dashboardData.totalUsers.toString(), 
+        icon: Users, 
+        color: 'from-blue-500 to-blue-600', 
+        change: dashboardData.totalUsers > 0 ? 'Active' : 'No Users'
+      },
+      { 
+        title: 'Products', 
+        value: dashboardData.totalProducts.toString(), 
+        icon: Package, 
+        color: 'from-accent-500 to-accent-600', 
+        change: 'Available'
+      },
+    ];
+  };
+
+  const stats = getStats();
+
+  const getRecentActivities = () => {
+    if (!dashboardData) return [];
+    
+    const activities = [];
+    
+    if (dashboardData.totalUsers > 0) {
+      activities.push({
+        action: `System has ${dashboardData.totalUsers} registered users`,
+        time: 'Current status',
+        type: 'success',
+        icon: CheckCircle
+      });
+    }
+    
+    if (dashboardData.totalCarriers > 0) {
+      activities.push({
+        action: `${dashboardData.totalCarriers} carriers are onboarded`,
+        time: 'Current status',
+        type: 'success',
+        icon: CheckCircle
+      });
+    }
+    
+    if (dashboardData.totalRules > 0) {
+      activities.push({
+        action: `${dashboardData.totalRules} business rules are active`,
+        time: 'Current status',
+        type: 'info',
+        icon: Activity
+      });
+    } else {
+      activities.push({
+        action: 'No business rules configured yet',
+        time: 'Action needed',
+        type: 'warning',
+        icon: AlertTriangle
+      });
+    }
+    
+    activities.push({
+      action: `${dashboardData.totalProducts} products available in library`,
+      time: 'Current status',
+      type: 'info',
+      icon: Activity
+    });
+    
+    activities.push({
+      action: 'System is running normally',
+      time: 'System status',
+      type: 'success',
+      icon: CheckCircle
+    });
+    
+    return activities;
+  };
+  
+  const recentActivities = getRecentActivities();
 
   const quickActions = [
     { title: 'Add New Rule', desc: 'Create custom business rules', color: 'from-primary-500 to-primary-600', icon: Shield },
@@ -33,6 +137,28 @@ const DashboardContent = () => {
     { title: 'Upload Rules', desc: 'Bulk upload rule files', color: 'from-warning-500 to-warning-600', icon: FileText },
     { title: 'View Analytics', desc: 'Check system performance', color: 'from-accent-500 to-accent-600', icon: TrendingUp },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <div className="text-red-500 mb-4">Failed to load dashboard data</div>
+        <button 
+          onClick={loadDashboardData}
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -89,27 +215,40 @@ const DashboardContent = () => {
               Quick Actions
             </h3>
             <div className="space-y-4">
-              {quickActions.map((action, index) => (
-                <motion.button
-                  key={action.title}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  whileHover={{ scale: 1.02, x: 5 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`w-full p-4 bg-gradient-to-r ${action.color} text-white rounded-xl hover:shadow-lg transition-all duration-200 text-left group`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <action.icon className="w-5 h-5" />
+              {quickActions.map((action, index) => {
+                const getNavigationTarget = (title) => {
+                  switch (title) {
+                    case 'Add New Rule': return 'add-rule';
+                    case 'Onboard Carrier': return 'carriers';
+                    case 'Upload Rules': return 'upload-rules';
+                    case 'View Analytics': return 'analytics';
+                    default: return 'dashboard';
+                  }
+                };
+                
+                return (
+                  <motion.button
+                    key={action.title}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    whileHover={{ scale: 1.02, x: 5 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onNavigate(getNavigationTarget(action.title))}
+                    className={`w-full p-4 bg-gradient-to-r ${action.color} text-white rounded-xl hover:shadow-lg transition-all duration-200 text-left group`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <action.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">{action.title}</h4>
+                        <p className="text-xs opacity-90">{action.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold">{action.title}</h4>
-                      <p className="text-xs opacity-90">{action.desc}</p>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
         </motion.div>
